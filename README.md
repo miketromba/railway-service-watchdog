@@ -6,9 +6,7 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
   <img src="https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white" alt="Node.js 22" />
   <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white" alt="Docker" />
-  <a href="https://github.com/miketromba/railway-service-watchdog/commits"><img src="https://img.shields.io/github/last-commit/miketromba/railway-service-watchdog" alt="Last commit" /></a>
-</p>
+  <img src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white" alt="Docker" /></p>
 
 Schedule automatic restarts for your Railway services. Runs as a lightweight sidecar inside your Railway project.
 

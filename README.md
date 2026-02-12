@@ -10,7 +10,7 @@
 
 Schedule automatic restarts for your Railway services. Runs as a lightweight sidecar inside your Railway project.
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/XXXXX)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/x9eK22?referralCode=4Fgt-L&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
 ## Why?
 

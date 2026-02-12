@@ -1,7 +1,7 @@
 FROM oven/bun:1-alpine AS installer
 WORKDIR /app
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --production
 
 FROM node:22-alpine
 WORKDIR /app

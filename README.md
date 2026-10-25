@@ -32,6 +32,8 @@ On each cron tick, for every configured service ID:
 2. Calls `deploymentRestart` to restart it
 3. Logs the result with a timestamp
 
+On startup it also checks that the token can read each service's deployments, and exits with an error if it can't, so a bad token shows up as a failed deploy right away.
+
 That's it. ~180 lines of TypeScript total.
 
 ## Quick Start
@@ -44,7 +46,8 @@ That's it. ~180 lines of TypeScript total.
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `RAILWAY_API_TOKEN` | Yes | — | Railway account or team token |
+| `RAILWAY_TOKEN` | One of these two | — | Railway project token for the target environment (recommended: it can only touch that one environment) |
+| `RAILWAY_API_TOKEN` | One of these two | — | Railway account or team token (used only if `RAILWAY_TOKEN` is unset) |
 | `PROJECT_ID` | Yes | — | Railway project ID |
 | `ENVIRONMENT_ID` | Yes | — | Railway environment ID |
 | `SERVICE_IDS` | Yes | — | Comma-separated service IDs to restart |

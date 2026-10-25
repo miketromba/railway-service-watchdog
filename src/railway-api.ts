@@ -1,5 +1,17 @@
 const RAILWAY_API_URL = "https://backboard.railway.com/graphql/v2";
 
+// Project tokens are scoped to one environment and use their own header;
+// account and team tokens use a Bearer header.
+export type RailwayAuth =
+  | { kind: "project"; token: string }
+  | { kind: "bearer"; token: string };
+
+function authHeaders(auth: RailwayAuth): Record<string, string> {
+  return auth.kind === "project"
+    ? { "Project-Access-Token": auth.token }
+    : { Authorization: `Bearer ${auth.token}` };
+}
+
 interface DeploymentNode {
   id: string;
   status: string;
@@ -22,7 +34,7 @@ interface RestartResponse {
 }
 
 async function graphqlRequest<T>(
-  token: string,
+  auth: RailwayAuth,
   query: string,
   variables: Record<string, string>,
 ): Promise<T> {
@@ -30,7 +42,7 @@ async function graphqlRequest<T>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...authHeaders(auth),
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -43,7 +55,7 @@ async function graphqlRequest<T>(
 }
 
 export async function getActiveDeployment(
-  token: string,
+  auth: RailwayAuth,
   projectId: string,
   serviceId: string,
   environmentId: string,
@@ -69,7 +81,7 @@ export async function getActiveDeployment(
     }
   `;
 
-  const result = await graphqlRequest<DeploymentsResponse>(token, query, {
+  const result = await graphqlRequest<DeploymentsResponse>(auth, query, {
     projectId,
     serviceId,
     environmentId,
@@ -84,7 +96,7 @@ export async function getActiveDeployment(
 }
 
 export async function restartDeployment(
-  token: string,
+  auth: RailwayAuth,
   deploymentId: string,
 ): Promise<boolean> {
   const query = `
@@ -93,7 +105,7 @@ export async function restartDeployment(
     }
   `;
 
-  const result = await graphqlRequest<RestartResponse>(token, query, {
+  const result = await graphqlRequest<RestartResponse>(auth, query, {
     deploymentId,
   });
 

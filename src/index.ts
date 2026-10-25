@@ -1,5 +1,9 @@
 import cron from "node-cron";
-import { getActiveDeployment, restartDeployment } from "./railway-api.js";
+import {
+  getActiveDeployment,
+  restartDeployment,
+  type RailwayAuth,
+} from "./railway-api.js";
 
 function log(message: string): void {
   const timestamp = new Date().toISOString();
@@ -15,7 +19,22 @@ function requireEnv(name: string): string {
   return value;
 }
 
-const RAILWAY_API_TOKEN = requireEnv("RAILWAY_API_TOKEN");
+function resolveAuth(): RailwayAuth {
+  const projectToken = process.env["RAILWAY_TOKEN"];
+  if (projectToken) {
+    return { kind: "project", token: projectToken };
+  }
+  const apiToken = process.env["RAILWAY_API_TOKEN"];
+  if (apiToken) {
+    return { kind: "bearer", token: apiToken };
+  }
+  console.error(
+    "ERROR: Set RAILWAY_TOKEN (project token) or RAILWAY_API_TOKEN (account or team token)",
+  );
+  process.exit(1);
+}
+
+const RAILWAY_AUTH = resolveAuth();
 const PROJECT_ID = requireEnv("PROJECT_ID");
 const ENVIRONMENT_ID = requireEnv("ENVIRONMENT_ID");
 const SERVICE_IDS = requireEnv("SERVICE_IDS")
@@ -42,7 +61,7 @@ async function restartServices(): Promise<void> {
       log(`Fetching active deployment for service ${serviceId}...`);
 
       const deploymentId = await getActiveDeployment(
-        RAILWAY_API_TOKEN,
+        RAILWAY_AUTH,
         PROJECT_ID,
         serviceId,
         ENVIRONMENT_ID,
@@ -54,7 +73,7 @@ async function restartServices(): Promise<void> {
       }
 
       log(`Restarting deployment ${deploymentId} for service ${serviceId}...`);
-      await restartDeployment(RAILWAY_API_TOKEN, deploymentId);
+      await restartDeployment(RAILWAY_AUTH, deploymentId);
       log(`Successfully restarted service ${serviceId}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -65,9 +84,32 @@ async function restartServices(): Promise<void> {
   log("Restart cycle complete");
 }
 
+// Check the token at startup so a revoked or under-scoped token fails the
+// deploy now, instead of silently skipping the next scheduled restart.
+async function verifyAccess(): Promise<void> {
+  for (const serviceId of SERVICE_IDS) {
+    try {
+      const deploymentId = await getActiveDeployment(
+        RAILWAY_AUTH,
+        PROJECT_ID,
+        serviceId,
+        ENVIRONMENT_ID,
+      );
+      log(`Access OK for service ${serviceId} (active deployment: ${deploymentId ?? "none"})`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`ERROR: Cannot read deployments for service ${serviceId}: ${message}`);
+      process.exit(1);
+    }
+  }
+}
+
 log("Railway Service Watchdog started");
+log(`Auth: ${RAILWAY_AUTH.kind === "project" ? "project token" : "account/team token"}`);
 log(`Schedule: ${RESTART_SCHEDULE}`);
 log(`Services: ${SERVICE_IDS.join(", ")}`);
+
+await verifyAccess();
 
 cron.schedule(RESTART_SCHEDULE, () => {
   void restartServices();

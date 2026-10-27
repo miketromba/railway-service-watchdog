@@ -44,7 +44,8 @@ That's it. ~180 lines of TypeScript total.
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `RAILWAY_API_TOKEN` | Yes | — | Railway account or team token |
+| `RAILWAY_TOKEN` | One of these two | — | Railway project token for the project and environment below (Project Settings → Tokens). Preferred: it can reach nothing else |
+| `RAILWAY_API_TOKEN` | One of these two | — | Railway account or workspace token. Used only when `RAILWAY_TOKEN` is unset |
 | `PROJECT_ID` | Yes | — | Railway project ID |
 | `ENVIRONMENT_ID` | Yes | — | Railway environment ID |
 | `SERVICE_IDS` | Yes | — | Comma-separated service IDs to restart |

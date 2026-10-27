@@ -1,5 +1,18 @@
 const RAILWAY_API_URL = "https://backboard.railway.com/graphql/v2";
 
+/**
+ * A project token (RAILWAY_TOKEN) is sent in its own header and reaches only its
+ * project's environment; an account or workspace token (RAILWAY_API_TOKEN) is a
+ * bearer token.
+ */
+export type RailwayToken = { project: string } | { api: string };
+
+function authHeaders(token: RailwayToken): Record<string, string> {
+  return "project" in token
+    ? { "Project-Access-Token": token.project }
+    : { Authorization: `Bearer ${token.api}` };
+}
+
 interface DeploymentNode {
   id: string;
   status: string;
@@ -22,7 +35,7 @@ interface RestartResponse {
 }
 
 async function graphqlRequest<T>(
-  token: string,
+  token: RailwayToken,
   query: string,
   variables: Record<string, string>,
 ): Promise<T> {
@@ -30,7 +43,7 @@ async function graphqlRequest<T>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...authHeaders(token),
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -43,7 +56,7 @@ async function graphqlRequest<T>(
 }
 
 export async function getActiveDeployment(
-  token: string,
+  token: RailwayToken,
   projectId: string,
   serviceId: string,
   environmentId: string,
@@ -84,7 +97,7 @@ export async function getActiveDeployment(
 }
 
 export async function restartDeployment(
-  token: string,
+  token: RailwayToken,
   deploymentId: string,
 ): Promise<boolean> {
   const query = `

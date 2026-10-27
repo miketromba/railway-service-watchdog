@@ -1,5 +1,9 @@
 import cron from "node-cron";
-import { getActiveDeployment, restartDeployment } from "./railway-api.js";
+import {
+  getActiveDeployment,
+  restartDeployment,
+  type RailwayToken,
+} from "./railway-api.js";
 
 function log(message: string): void {
   const timestamp = new Date().toISOString();
@@ -15,7 +19,18 @@ function requireEnv(name: string): string {
   return value;
 }
 
-const RAILWAY_API_TOKEN = requireEnv("RAILWAY_API_TOKEN");
+function requireToken(): RailwayToken {
+  const project = process.env["RAILWAY_TOKEN"];
+  if (project) return { project };
+  const api = process.env["RAILWAY_API_TOKEN"];
+  if (api) return { api };
+  console.error(
+    "ERROR: Set RAILWAY_TOKEN (a project token) or RAILWAY_API_TOKEN (an account or workspace token)",
+  );
+  process.exit(1);
+}
+
+const TOKEN = requireToken();
 const PROJECT_ID = requireEnv("PROJECT_ID");
 const ENVIRONMENT_ID = requireEnv("ENVIRONMENT_ID");
 const SERVICE_IDS = requireEnv("SERVICE_IDS")
@@ -42,7 +57,7 @@ async function restartServices(): Promise<void> {
       log(`Fetching active deployment for service ${serviceId}...`);
 
       const deploymentId = await getActiveDeployment(
-        RAILWAY_API_TOKEN,
+        TOKEN,
         PROJECT_ID,
         serviceId,
         ENVIRONMENT_ID,
@@ -54,7 +69,7 @@ async function restartServices(): Promise<void> {
       }
 
       log(`Restarting deployment ${deploymentId} for service ${serviceId}...`);
-      await restartDeployment(RAILWAY_API_TOKEN, deploymentId);
+      await restartDeployment(TOKEN, deploymentId);
       log(`Successfully restarted service ${serviceId}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -68,6 +83,9 @@ async function restartServices(): Promise<void> {
 log("Railway Service Watchdog started");
 log(`Schedule: ${RESTART_SCHEDULE}`);
 log(`Services: ${SERVICE_IDS.join(", ")}`);
+log(
+  `Token: ${"project" in TOKEN ? "project token (RAILWAY_TOKEN)" : "account or workspace token (RAILWAY_API_TOKEN)"}`,
+);
 
 cron.schedule(RESTART_SCHEDULE, () => {
   void restartServices();
